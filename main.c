@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
 #include "hardware/i2c.h"
-#include "inc/Kitronik_Robotics_Board.h"
-#include "inc/regwrite.h"
+#include "Kitronik_Robotics_Board.h"
+#include "regwrite.h"
 
 int main()
 {
@@ -15,10 +15,7 @@ int main()
         board->motor_on(board, 1, 'f', 100);
         sleep_ms(2000);
 
-        board->motor_on(board, 1, 'f', 50);
-        sleep_ms(2000);
-
-        board->motor_on(board, 1, 'f', 10);
+        board->motor_off(board, 1);
         sleep_ms(2000);
 
         n++;

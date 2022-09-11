@@ -13,6 +13,7 @@ KitronikRoboticsBoard_t *krb_init()
     krb->MOT_REG_BASE = 0x28;
     krb->REG_OFFSET = 0x4;
     krb->motor_on = &_krb_motor_on;
+    krb->motor_off = &_krb_motor_off;
     krb->software_reset = &_krb_software_reset;
     krb->destroy = &_krb_destroy;
     krb->outputs_off = &_krb_zero_outputs;
@@ -76,6 +77,11 @@ void _krb_motor_on(KitronikRoboticsBoard_t *self, uint8_t motor, const char dir,
         reg_write(I2C_PORT, self->CHIP_ADDR, MOT_REG + 4, &zero, 1);
         reg_write(I2C_PORT, self->CHIP_ADDR, MOT_REG + 5, &zero, 1);
     }
+}
+
+void _krb_motor_off(KitronikRoboticsBoard_t *self, uint8_t motor)
+{
+    self->motor_on(self, motor, 'f', 0);
 }
 
 void _krb_zero_outputs(KitronikRoboticsBoard_t *self)

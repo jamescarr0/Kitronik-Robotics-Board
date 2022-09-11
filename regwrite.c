@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include "hardware/i2c.h"
-#include "inc/regwrite.h"
+#include "regwrite.h"
 
 
 int reg_write(i2c_inst_t *i2c,

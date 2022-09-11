@@ -6,7 +6,6 @@ set(CMAKE_CXX_STANDARD 17)
 
 # # Pull in Raspberry Pi Pico SDK (must be before project)
 include(pico_sdk_import.cmake 
-         ${PROJECT_SOURCE_DIR}
 )
 
 project(Kitronik-Robotics-Board C CXX ASM)
@@ -20,6 +19,8 @@ add_executable(main main.c regwrite.c Kitronik-Robotics-Board.c)
 # # pico_set_program_version(Kitronik-Robotics-Board "0.1")
 
 pico_add_extra_outputs(main)
+
+target_include_directories(main PRIVATE ${PROJECT_SOURCE_DIR}/inc)
 
 # Add any user requested libraries
 target_link_libraries(main
