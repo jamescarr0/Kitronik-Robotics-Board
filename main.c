@@ -16,7 +16,13 @@ int main()
         sleep_ms(2000);
 
         board->motor_off(board, 1);
+        sleep_ms(500);
+
+        board->motor_on(board, 1, 'r', 100);
         sleep_ms(2000);
+
+        board->motor_off(board, 1);
+        sleep_ms(500);
 
         n++;
     }

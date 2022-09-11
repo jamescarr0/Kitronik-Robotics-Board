@@ -27,13 +27,13 @@ KitronikRoboticsBoard_t *krb_init()
     gpio_pull_up(I2C_SDA);
     gpio_pull_up(I2C_SCL);
 
-    krb->software_reset(krb);
+    _krb_software_reset(krb);
 
     // Setup the prescale to have 20mS pulse repetition - this is dictated by the servos.
     reg_write(I2C_PORT, krb->CHIP_ADDR, 0xfe, "\x78", 1);
 
     // Block write outputs to off
-    krb->outputs_off(krb);
+    _krb_zero_outputs(krb);
 
     // Come out of sleep
     reg_write(I2C_PORT, krb->CHIP_ADDR, 0x00, "\x01", 1);
@@ -77,25 +77,32 @@ void _krb_motor_on(KitronikRoboticsBoard_t *self, uint8_t motor, const char dir,
         reg_write(I2C_PORT, self->CHIP_ADDR, MOT_REG + 4, &zero, 1);
         reg_write(I2C_PORT, self->CHIP_ADDR, MOT_REG + 5, &zero, 1);
     }
+    else if (dir == 'r')
+    {
+        reg_write(I2C_PORT, self->CHIP_ADDR, MOT_REG, &zero, 1);
+        reg_write(I2C_PORT, self->CHIP_ADDR, MOT_REG + 1, &zero, 1);
+        reg_write(I2C_PORT, self->CHIP_ADDR, MOT_REG + 4, &low_byte, 1);
+        reg_write(I2C_PORT, self->CHIP_ADDR, MOT_REG + 5, &high_byte, 1);
+    }
 }
 
 void _krb_motor_off(KitronikRoboticsBoard_t *self, uint8_t motor)
 {
-    self->motor_on(self, motor, 'f', 0);
+    _krb_motor_on(self, motor, 'f', 0);
 }
 
 void _krb_zero_outputs(KitronikRoboticsBoard_t *self)
 {
-    // Block write outputs to off
-    reg_write(I2C_PORT, self->CHIP_ADDR, 0xfa, "\x00", 1);
-    reg_write(I2C_PORT, self->CHIP_ADDR, 0xfb, "\x00", 1);
-    reg_write(I2C_PORT, self->CHIP_ADDR, 0xfc, "\x00", 1);
-    reg_write(I2C_PORT, self->CHIP_ADDR, 0xfd, "\x00", 1);
+    // Block write outputs to off: 0xfa, 0xfb, 0xfc, 0xfd.
+    for (uint8_t i = 0; i < 4; i++)
+    {
+        reg_write(I2C_PORT, self->CHIP_ADDR, 0xfa + i, "\x00", 1);
+    }
 }
 
 void _krb_destroy(KitronikRoboticsBoard_t *self)
 {
     // Turn all outputs off and free allocated memory.
-    self->outputs_off(self);
+    _krb_zero_outputs(self);
     free(self);
 }
