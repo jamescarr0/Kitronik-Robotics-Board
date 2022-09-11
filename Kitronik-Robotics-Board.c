@@ -1,27 +1,21 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "pico/stdlib.h"
 #include "hardware/i2c.h"
+#include "inc/regwrite.h"
+#include "inc/Kitronik_Robotics_Board.h"
 
-#define I2C_PORT i2c0
-#define I2C_SDA 8
-#define I2C_SCL 9
-
-const uint8_t CHIP_ADDR = 0x6C;
-const uint8_t SRV_REG_BASE = 0x08;
-const uint8_t MOT_REG_BASE = 0x28;
-const uint8_t REG_OFFSET = 0x4;
-
-int reg_write(i2c_inst_t *i2c,
-              const uint addr,
-              const uint8_t reg,
-              uint8_t *buf,
-              const uint8_t nbytes);
-
-void motor_on(uint8_t motor, const char dir, uint8_t speed);
-
-int main()
+KitronikRoboticsBoard_t *krb_init()
 {
-    stdio_init_all();
+    KitronikRoboticsBoard_t *krb = malloc(sizeof(KitronikRoboticsBoard_t));
+    krb->CHIP_ADDR = 0x6c;
+    krb->SRV_REG_BASE = 0x08;
+    krb->MOT_REG_BASE = 0x28;
+    krb->REG_OFFSET = 0x4;
+    krb->motor_on = &_krb_motor_on;
+    krb->software_reset = &_krb_software_reset;
+    krb->destroy = &_krb_destroy;
+    krb->outputs_off = &_krb_zero_outputs;
 
     // I2C Initialisation. Frequency 100000.
     i2c_init(I2C_PORT, 100 * 1000);
@@ -32,70 +26,27 @@ int main()
     gpio_pull_up(I2C_SDA);
     gpio_pull_up(I2C_SCL);
 
-    // Software Reset
-    // i2c_write_raw_blocking(I2C_PORT, "\x06", 1);
-    if (reg_write(I2C_PORT, CHIP_ADDR, 0, "\x06", 1) == PICO_ERROR_GENERIC)
-    {
-        while (1)
-        {
-            printf("PICO GENERIC ERROR!\n");
-            sleep_ms(1000);
-        }
-    }
+    krb->software_reset(krb);
 
     // Setup the prescale to have 20mS pulse repetition - this is dictated by the servos.
-    reg_write(I2C_PORT, CHIP_ADDR, 0xfe, "\x78", 1);
+    reg_write(I2C_PORT, krb->CHIP_ADDR, 0xfe, "\x78", 1);
 
     // Block write outputs to off
-    reg_write(I2C_PORT, CHIP_ADDR, 0xfa, "\x00", 1);
-    reg_write(I2C_PORT, CHIP_ADDR, 0xfb, "\x00", 1);
-    reg_write(I2C_PORT, CHIP_ADDR, 0xfc, "\x00", 1);
-    reg_write(I2C_PORT, CHIP_ADDR, 0xfd, "\x00", 1);
+    krb->outputs_off(krb);
 
     // Come out of sleep
-    reg_write(I2C_PORT, CHIP_ADDR, 0x00, "\x01", 1);
+    reg_write(I2C_PORT, krb->CHIP_ADDR, 0x00, "\x01", 1);
 
-    while (1)
-    {
-        motor_on(1, 'f', 100);
-        sleep_ms(2000);
-        motor_on(1, 'f', 10);
-        sleep_ms(2000);
-    }
-
-    return 0;
+    return krb;
 }
 
-int reg_write(i2c_inst_t *i2c,
-              const uint addr,
-              const uint8_t reg,
-              uint8_t *buf,
-              const uint8_t nbytes)
+void _krb_software_reset(KitronikRoboticsBoard_t *self)
 {
-
-    int num_bytes_read = 0;
-    uint8_t msg[nbytes + 1];
-
-    // Check to make sure caller is sending 1 or more bytes
-    if (nbytes < 1)
-    {
-        return 0;
-    }
-
-    // Prepend the register address to the front of the data packet
-    msg[0] = reg;
-    for (int i = 0; i < nbytes; i++)
-    {
-        msg[i + 1] = buf[i];
-    }
-
-    // Write data to the register over i2c.
-    int res = i2c_write_blocking(i2c, addr, msg, (nbytes + 1), false);
-
-    return res;
+    // Software Reset
+    i2c_write_raw_blocking(I2C_PORT, "\x06", 1);
 }
 
-void motor_on(uint8_t motor, const char dir, uint8_t speed)
+void _krb_motor_on(KitronikRoboticsBoard_t *self, uint8_t motor, const char dir, uint8_t speed)
 {
 
     // Cap speed to 100%
@@ -112,7 +63,7 @@ void motor_on(uint8_t motor, const char dir, uint8_t speed)
     // Driving the motor. Convert 0-100% to 0-4095 and push it to the correct registers.
     // each motor has 4 writes - low and high bytes for a pair of registers.
 
-    uint8_t MOT_REG = MOT_REG_BASE + (2 * (motor - 1) * REG_OFFSET);
+    uint8_t MOT_REG = self->MOT_REG_BASE + (2 * (motor - 1) * self->REG_OFFSET);
     uint16_t PWM_Val = speed * 40.95;
     uint8_t low_byte = PWM_Val & 0xff;
     uint8_t high_byte = (PWM_Val >> 8) & 0xff;
@@ -120,9 +71,25 @@ void motor_on(uint8_t motor, const char dir, uint8_t speed)
 
     if (dir == 'f')
     {
-        reg_write(I2C_PORT, CHIP_ADDR, MOT_REG, &low_byte, 1);
-        reg_write(I2C_PORT, CHIP_ADDR, MOT_REG + 1, &high_byte, 1);
-        reg_write(I2C_PORT, CHIP_ADDR, MOT_REG + 4, &zero, 1);
-        reg_write(I2C_PORT, CHIP_ADDR, MOT_REG + 5, &zero, 1);
+        reg_write(I2C_PORT, self->CHIP_ADDR, MOT_REG, &low_byte, 1);
+        reg_write(I2C_PORT, self->CHIP_ADDR, MOT_REG + 1, &high_byte, 1);
+        reg_write(I2C_PORT, self->CHIP_ADDR, MOT_REG + 4, &zero, 1);
+        reg_write(I2C_PORT, self->CHIP_ADDR, MOT_REG + 5, &zero, 1);
     }
+}
+
+void _krb_zero_outputs(KitronikRoboticsBoard_t *self)
+{
+    // Block write outputs to off
+    reg_write(I2C_PORT, self->CHIP_ADDR, 0xfa, "\x00", 1);
+    reg_write(I2C_PORT, self->CHIP_ADDR, 0xfb, "\x00", 1);
+    reg_write(I2C_PORT, self->CHIP_ADDR, 0xfc, "\x00", 1);
+    reg_write(I2C_PORT, self->CHIP_ADDR, 0xfd, "\x00", 1);
+}
+
+void _krb_destroy(KitronikRoboticsBoard_t *self)
+{
+    // Turn all outputs off and free allocated memory.
+    self->outputs_off(self);
+    free(self);
 }
