@@ -15,9 +15,7 @@ KitronikRoboticsBoard_t *krb_init()
     krb->REG_OFFSET = 0x4;
     krb->motor_on = &_krb_motor_on;
     krb->motor_off = &_krb_motor_off;
-    krb->software_reset = &_krb_software_reset;
     krb->destroy = &_krb_destroy;
-    krb->outputs_off = &_krb_zero_outputs;
     krb->servo = &_krb_servo_write;
 
     // I2C Initialisation. Frequency 100000.
