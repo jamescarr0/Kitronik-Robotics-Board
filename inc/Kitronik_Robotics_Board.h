@@ -18,6 +18,7 @@ typedef struct KitronikRoboticsBoard
     void (*software_reset) (struct KitronikRoboticsBoard *self);
     void (*outputs_off) (struct KitronikRoboticsBoard *self);
     void (*destroy) (struct KitronikRoboticsBoard *self);
+    void (*servo) (struct KitronikRoboticsBoard *self, uint8_t servo, uint8_t degrees);
 } KitronikRoboticsBoard_t;
 
 KitronikRoboticsBoard_t *krb_init();
@@ -27,6 +28,8 @@ void _krb_zero_outputs(KitronikRoboticsBoard_t *self);
 void _krb_zero_motor_output(KitronikRoboticsBoard_t *self, uint8_t MOT_REG);
 void _krb_motor_on(KitronikRoboticsBoard_t *self, uint8_t motor, char dir, uint8_t speed);
 void _krb_motor_off(KitronikRoboticsBoard_t *self, uint8_t motor);
+void _krb_servo_write(KitronikRoboticsBoard_t *self, uint8_t servo, uint8_t degrees);
 void _krb_destroy(KitronikRoboticsBoard_t *self);
+void _set_prescaler(KitronikRoboticsBoard_t *self);
 
 #endif /* KITRONIK_ROBOTICS_BOARD_H */
