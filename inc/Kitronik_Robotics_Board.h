@@ -1,7 +1,7 @@
-#include <stdio.h>
-
 #ifndef KITRONIK_ROBOTICS_BOARD_H
 #define KITRONIK_ROBOTICS_BOARD_H
+
+#include <stdio.h>
 
 #define I2C_PORT i2c0
 #define I2C_SDA 8
