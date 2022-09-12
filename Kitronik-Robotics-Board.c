@@ -29,7 +29,7 @@ KitronikRoboticsBoard_t *krb_init()
     gpio_pull_up(I2C_SDA);
     gpio_pull_up(I2C_SCL);
 
-    // _krb_software_reset(krb);
+    _krb_software_reset(krb);
 
     _set_prescaler(krb);
 
@@ -39,7 +39,7 @@ KitronikRoboticsBoard_t *krb_init()
     // Come out of sleep.  It takes 500uS max for the oscillator to be up and running once SLEEP logic bit (bit4) is set to 1.
     // Timings are not guranteed if registers are accessed with the 500uS window.
     reg_write(I2C_PORT, krb->CHIP_ADDR, 0x00, "\x01", 1);
-    sleep_us(500);  // Delay to guranteed PWM timings.
+    sleep_us(500);  // Delay to gurantee PWM timings.
 
     return krb;
 }
@@ -69,15 +69,15 @@ void _krb_software_reset(KitronikRoboticsBoard_t *self)
         byte 1: Software Reset Data Byte 00000110 = 0x6;
         If byte 1 does NOT equal 0x6, or more than 1 byte of data is sent, the PCA chip does not acknowledge it.
     */
+
     // Software Reset on the PCA Chip.
-    uint8_t txdata[] = {'\x00', '\x06'};
-    i2c_write_raw_blocking(I2C_PORT, &txdata[0], 2);
+    i2c_write_blocking(I2C_PORT, 0x0, "\x06", 1, false);
 }
 
-void _krb_motor_on(KitronikRoboticsBoard_t *self, uint8_t motor, const char dir, uint8_t speed)
+void _krb_motor_on(KitronikRoboticsBoard_t *self, const uint8_t motor, const char dir, uint8_t speed)
 {
 
-    // Cap speed to 100%
+    // Speed constraints - Cap speed to 100%
     if (speed < 0)
     {
         speed = 0;
@@ -85,6 +85,13 @@ void _krb_motor_on(KitronikRoboticsBoard_t *self, uint8_t motor, const char dir,
     else if (speed > 100)
     {
         speed = 100;
+    }
+
+    // Check motor number is within range. 1 - 4.
+    if ((motor < 1) | (motor > 4))
+    {
+        printf("Error: Invalid motor selection.\n");
+        return;
     }
 
     // Turn on a motor
@@ -120,7 +127,7 @@ void _krb_motor_on(KitronikRoboticsBoard_t *self, uint8_t motor, const char dir,
     }
 }
 
-void _krb_motor_off(KitronikRoboticsBoard_t *self, uint8_t motor)
+void _krb_motor_off(KitronikRoboticsBoard_t *self, const uint8_t motor)
 {
     _krb_motor_on(self, motor, 'f', 0);
 }
@@ -154,17 +161,17 @@ void _krb_destroy(KitronikRoboticsBoard_t *self)
     To calculate the count for the corect pulse is simply:
     (degrees x count per degree ) + offset
 */
-void _krb_servo_write(KitronikRoboticsBoard_t *self, uint8_t servo, uint8_t degrees)
+void _krb_servo_write(KitronikRoboticsBoard_t *self, const uint8_t servo, uint8_t degrees)
 {
-    // // Check the degrees is a realistic number, cap between 0-180.
-    // if (degrees > 180)
-    // {
-    //     degrees = 180;
-    // }
-    // else if (degrees < 0)
-    // {
-    //     degrees = 0;
-    // }
+    // Check the degrees is a realistic number, cap between 0-180.
+    if (degrees > 180)
+    {
+        degrees = 180;
+    }
+    else if (degrees < 0)
+    {
+        degrees = 0;
+    }
 
     if ((servo < 1) || (servo > 8))
     {

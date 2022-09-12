@@ -31,15 +31,15 @@ int main()
     {
         board->servo(board, 1, 0);
         sleep_ms(1000);
-        board->servo(board, 1, 180);
+        board->servo(board, 1, 250);
         sleep_ms(1000);
         board->servo(board, 1, 0);
         sleep_ms(1000);
-        board->servo(board, 1, 90);
+        board->servo(board, 1, 250);
         sleep_ms(1000);
         board->servo(board, 1, 0);
         sleep_ms(1000);
-        board->servo(board, 1, 20);
+        board->servo(board, 1, 250);
         sleep_ms(1000);
         n++;
     }
