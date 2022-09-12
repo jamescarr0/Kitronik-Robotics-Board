@@ -5,7 +5,6 @@
 #include "inc/regwrite.h"
 #include "inc/Kitronik_Robotics_Board.h"
 
-/* Datasheet for the onboard PCA Chip: https://www.nxp.com/docs/en/data-sheet/PCA9685.pdf */
 KitronikRoboticsBoard_t *krb_init()
 {
     KitronikRoboticsBoard_t *krb = malloc(sizeof(KitronikRoboticsBoard_t));
