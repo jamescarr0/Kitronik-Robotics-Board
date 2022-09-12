@@ -1,5 +1,7 @@
 # C Library for the 5329 V1 Kitronik Robotics Board for Raspberry Pi Pio
 
+Currently under development, work in progess..
+
 Kitronik Robotics Board for Raspberry Pi Pico: https://kitronik.co.uk/products/5329-kitronik-compact-robotics-board-for-raspberry-pi-pico
 Datasheet: https://www.nxp.com/docs/en/data-sheet/PCA9685.pdf
 

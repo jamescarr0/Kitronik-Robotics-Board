@@ -27,8 +27,10 @@ KitronikRoboticsBoard_t *krb_init()
     gpio_pull_up(I2C_SDA);
     gpio_pull_up(I2C_SCL);
 
+    // Reset the PCA.  This is performed on power up but may be useful for debugging.
     _krb_software_reset(krb);
 
+    // Setup the prescale to have 20mS (50Hz) pulse repetition - this is dictated by the servos.
     _set_prescaler(krb);
 
     // Block write outputs to off
@@ -55,8 +57,6 @@ void _set_prescaler(KitronikRoboticsBoard_t *self)
         prescale value = round (25000000 / (4096 * 50)) - 1 
         presscale value = 121 = 79h = 0x79
     */
-
-    // Setup the prescale to have 20mS (50Hz) pulse repetition - this is dictated by the servos.
     reg_write(I2C_PORT, self->CHIP_ADDR, 0xfe, "\x79", 1);
 }
 
