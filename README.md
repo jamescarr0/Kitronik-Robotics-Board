@@ -1,4 +1,4 @@
-# C Library for the 5329 V1 Kitronik Robotics Board for Raspberry Pi Pio
+# C Library for the 5329 V1 Kitronik Robotics Board for Raspberry Pi Pico
 
 Ported from the original Microptyhon code by Kitronik: https://github.com/KitronikLtd/Kitronik-Pico-Robotics-Board-MicroPython
 
