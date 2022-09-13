@@ -8,6 +8,9 @@
 KitronikRoboticsBoard_t *krb_init()
 {
     KitronikRoboticsBoard_t *krb = malloc(sizeof(KitronikRoboticsBoard_t));
+    krb->I2C_PORT = i2c0;
+    krb->I2C_SDA = 8;
+    krb->I2C_SCL = 9;
     krb->CHIP_ADDR = 0x6c;
     krb->SRV_REG_BASE = 0x08;
     krb->MOT_REG_BASE = 0x28;
@@ -18,13 +21,13 @@ KitronikRoboticsBoard_t *krb_init()
     krb->servo = &_krb_servo_write;
 
     // I2C Initialisation. Frequency 100000.
-    i2c_init(I2C_PORT, 100 * 1000);
+    i2c_init(krb->I2C_PORT, 100 * 1000);
 
-    gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);
-    gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);
+    gpio_set_function(krb->I2C_SDA, GPIO_FUNC_I2C);
+    gpio_set_function(krb->I2C_SCL, GPIO_FUNC_I2C);
 
-    gpio_pull_up(I2C_SDA);
-    gpio_pull_up(I2C_SCL);
+    gpio_pull_up(krb->I2C_SDA);
+    gpio_pull_up(krb->I2C_SCL);
 
     // Reset the PCA.  This is performed on power up but may be useful for debugging.
     _krb_software_reset(krb);
@@ -37,8 +40,8 @@ KitronikRoboticsBoard_t *krb_init()
 
     // Come out of sleep.  It takes 500uS max for the oscillator to be up and running once SLEEP logic bit (bit4) is set to 1.
     // Timings are not guranteed if registers are accessed with the 500uS window.
-    reg_write(I2C_PORT, krb->CHIP_ADDR, 0x00, "\x01", 1);
-    sleep_us(500);  // Delay to gurantee PWM timings.
+    reg_write(krb, 0x00, "\x01", 1);
+    sleep_us(500); // Delay to gurantee PWM timings.
 
     return krb;
 }
@@ -52,11 +55,11 @@ void _set_prescaler(KitronikRoboticsBoard_t *self)
         For example, the output frequency of 50Hz with the internal oscillator clock frequency of
         25 Mhz:
 
-        prescale value = round( 25MHZ / (4096*50Hz) ) - 1 
-        prescale value = round (25000000 / (4096 * 50)) - 1 
+        prescale value = round( 25MHZ / (4096*50Hz) ) - 1
+        prescale value = round (25000000 / (4096 * 50)) - 1
         presscale value = 121 = 79h = 0x79
     */
-    reg_write(I2C_PORT, self->CHIP_ADDR, 0xfe, "\x79", 1);
+    reg_write(self, 0xfe, "\x79", 1);
 }
 
 void _krb_software_reset(KitronikRoboticsBoard_t *self)
@@ -68,7 +71,7 @@ void _krb_software_reset(KitronikRoboticsBoard_t *self)
     */
 
     // Software Reset on the PCA Chip.
-    i2c_write_blocking(I2C_PORT, 0x0, "\x06", 1, false);
+    i2c_write_blocking(self->I2C_PORT, 0x0, "\x06", 1, false);
 }
 
 void _krb_motor_on(KitronikRoboticsBoard_t *self, const uint8_t motor, const char dir, uint8_t speed)
@@ -102,25 +105,25 @@ void _krb_motor_on(KitronikRoboticsBoard_t *self, const uint8_t motor, const cha
 
     if (dir == 'f')
     {
-        reg_write(I2C_PORT, self->CHIP_ADDR, MOT_REG, &low_byte, 1);
-        reg_write(I2C_PORT, self->CHIP_ADDR, MOT_REG + 1, &high_byte, 1);
-        reg_write(I2C_PORT, self->CHIP_ADDR, MOT_REG + 4, &zero, 1);
-        reg_write(I2C_PORT, self->CHIP_ADDR, MOT_REG + 5, &zero, 1);
+        reg_write(self, MOT_REG, &low_byte, 1);
+        reg_write(self, MOT_REG + 1, &high_byte, 1);
+        reg_write(self, MOT_REG + 4, &zero, 1);
+        reg_write(self, MOT_REG + 5, &zero, 1);
     }
     else if (dir == 'r')
     {
-        reg_write(I2C_PORT, self->CHIP_ADDR, MOT_REG, &zero, 1);
-        reg_write(I2C_PORT, self->CHIP_ADDR, MOT_REG + 1, &zero, 1);
-        reg_write(I2C_PORT, self->CHIP_ADDR, MOT_REG + 4, &low_byte, 1);
-        reg_write(I2C_PORT, self->CHIP_ADDR, MOT_REG + 5, &high_byte, 1);
+        reg_write(self, MOT_REG, &zero, 1);
+        reg_write(self, MOT_REG + 1, &zero, 1);
+        reg_write(self, MOT_REG + 4, &low_byte, 1);
+        reg_write(self, MOT_REG + 5, &high_byte, 1);
     }
     else
     {
         printf("Error: Invalid Direction.  Stopping motors.\n");
-        reg_write(I2C_PORT, self->CHIP_ADDR, MOT_REG, &zero, 1);
-        reg_write(I2C_PORT, self->CHIP_ADDR, MOT_REG + 1, &zero, 1);
-        reg_write(I2C_PORT, self->CHIP_ADDR, MOT_REG + 4, &zero, 1);
-        reg_write(I2C_PORT, self->CHIP_ADDR, MOT_REG + 5, &zero, 1);
+        reg_write(self, MOT_REG, &zero, 1);
+        reg_write(self, MOT_REG + 1, &zero, 1);
+        reg_write(self, MOT_REG + 4, &zero, 1);
+        reg_write(self, MOT_REG + 5, &zero, 1);
     }
 }
 
@@ -136,7 +139,7 @@ void _krb_zero_outputs(KitronikRoboticsBoard_t *self)
     // with the same pattern.
     for (int i = 0; i < 4; i++)
     {
-        reg_write(I2C_PORT, self->CHIP_ADDR, 0xfa + i, "\x00", 1);
+        reg_write(self, 0xfa + i, "\x00", 1);
     }
 }
 
@@ -180,7 +183,7 @@ void _krb_servo_write(KitronikRoboticsBoard_t *self, const uint8_t servo, uint8_
         uint16_t PWM_val = (degrees * 2.2755) + 102;
         uint8_t low_byte = (PWM_val)&0xff;
         uint8_t high_byte = (PWM_val >> 8) & 0x1; // Cap high byte at 1, should never be more than 2.5ms.
-        reg_write(I2C_PORT, self->CHIP_ADDR, servo_reg, &low_byte, 1);
-        reg_write(I2C_PORT, self->CHIP_ADDR, servo_reg + 1, &high_byte, 1);
+        reg_write(self, servo_reg, &low_byte, 1);
+        reg_write(self, servo_reg + 1, &high_byte, 1);
     }
 }

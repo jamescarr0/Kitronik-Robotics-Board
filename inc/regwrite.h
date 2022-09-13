@@ -1,8 +1,9 @@
 #ifndef REG_WRITE_H
 #define REG_WRITE_H
 
-int reg_write(i2c_inst_t *i2c,
-              const uint8_t addr,
+#include "Kitronik_Robotics_Board.h"
+
+int reg_write(KitronikRoboticsBoard_t *self,
               const uint8_t reg,
               uint8_t *buf,
               const uint8_t nbytes);

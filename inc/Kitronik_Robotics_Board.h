@@ -3,12 +3,11 @@
 
 #include <stdio.h>
 
-#define I2C_PORT i2c0
-#define I2C_SDA 8
-#define I2C_SCL 9
-
 typedef struct KitronikRoboticsBoard
 {
+    i2c_inst_t *I2C_PORT;
+    uint8_t I2C_SDA;
+    uint8_t I2C_SCL;
     uint8_t CHIP_ADDR;
     uint8_t SRV_REG_BASE;
     uint8_t MOT_REG_BASE;
